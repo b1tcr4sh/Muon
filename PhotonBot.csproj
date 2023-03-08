@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   
@@ -13,5 +13,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\Debug\net7.0\PhotonAPI.dll</HintPath>
     </Reference>
+    <Reference Include="Photon3Unity3D.dll, Version=4.7.2, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\net7.0\Photon3Unity3D.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  
+  <ItemGroup>
+    <PackageReference Include="newtonsoft.json" Version="13.0.2" />
   </ItemGroup>
 </Project>

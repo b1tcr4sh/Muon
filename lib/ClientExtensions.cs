@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace APITests
+namespace APITests.lib
 {
     public enum RpcTarget
     {
@@ -191,7 +191,7 @@ namespace APITests
         {
             HttpClientHandler handler = new HttpClientHandler();
             handler.CookieContainer = new CookieContainer();
-            Uri target = new Uri("https://www.vrchat.com");
+            // Uri target = new Uri("https://www.vrchat.com");
             // handler.CookieContainer.Add(new Cookie("auth", AuthToken) { Domain = target.Host });
             HttpClient http = new HttpClient(handler);
 
@@ -205,7 +205,7 @@ namespace APITests
             HttpResponseMessage res;
 
             try {
-                res = await http.GetAsync("https://www.api.vrchat.cloud/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
+                res = await http.GetAsync("https://vrchat.com/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
             }
             catch (Exception e) {
                 throw new Exception(e.Message);

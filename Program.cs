@@ -1,4 +1,5 @@
 ﻿using PhotonBot.Util;
+using APITests.lib;
 using PhotonAPI;
 using PhotonAPI.API;
 using PhotonAPI.API.Connection;

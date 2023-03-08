@@ -1,0 +1,3 @@
+[submodule "lib/photonapi-revisited"]
+	path = lib/photonapi-revisited
+	url = git@github.com:/chronicallykyra/photonapi-revisited

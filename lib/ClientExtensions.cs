@@ -16,6 +16,11 @@ using System.Web;
 
 namespace APITests.lib
 {
+    public struct AuthTokens {
+        public string token { get; set; }
+        public bool using2FA { get; set; }
+        public string twoFactorToken { get; set; }
+    }
     public enum RpcTarget
     {
         All,
@@ -164,61 +169,71 @@ namespace APITests.lib
             return System.Convert.ToBase64String(plainTextBytes);
         }
 
-        public static string GetUserID(string AuthToken)
+        public static async Task<string> GetUserIDAsync(AuthTokens auth)
         {
-            try
-            {
-                HttpClientHandler handler = new HttpClientHandler();
-                handler.CookieContainer = new CookieContainer();
-                Uri target = new Uri("https://www.vrchat.com");
-                handler.CookieContainer.Add(new Cookie("auth", AuthToken) { Domain = target.Host });
-                HttpClient http = new HttpClient(handler);
 
-                var response = http.GetAsync("https://www.api.vrchat.cloud/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
-                if (response.Result.StatusCode == HttpStatusCode.OK)
-                {
-                    var json = JsonConvert.DeserializeObject<LoginResponse>(response.Result.Content.ReadAsStringAsync().Result);
-                    return json.id;
-                } else {
-                    throw new Exception("Auth request failed; code: " + response.Result.StatusCode);
-                }
+            HttpClientHandler handler = new HttpClientHandler();
+            handler.CookieContainer = new CookieContainer();
+            handler.CookieContainer.Add(new Cookie("auth", auth.token) { Domain = "vrchat.com" });
+            if (auth.using2FA) {
+                handler.CookieContainer.Add(new Cookie("twoFactorAuth", auth.twoFactorToken) { Domain = "vrchat.com" }); 
             }
-            catch (Exception e) {
-                throw new Exception(e.Message);
+            HttpClient http = new HttpClient(handler);
+            http.DefaultRequestHeaders.Add("User-Agent", "Cerberus / v0.1");
+
+            HttpResponseMessage res = await http.GetAsync("https://vrchat.com/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
+            if (res.StatusCode != HttpStatusCode.OK) {
+                throw new Exception("Request failed; code: " + res.StatusCode);
             }
+
+            var json = JsonConvert.DeserializeObject<LoginResponse>(res.Content.ReadAsStringAsync().Result);
+            return json.id;
         }
-        public static async Task<string> GetUserIDWithUsernamePasswordAsync(string username, string password)
+        public static AuthTokens LoginUser(string username, string password)
         {
             HttpClientHandler handler = new HttpClientHandler();
             handler.CookieContainer = new CookieContainer();
-            // Uri target = new Uri("https://www.vrchat.com");
-            // handler.CookieContainer.Add(new Cookie("auth", AuthToken) { Domain = target.Host });
             HttpClient http = new HttpClient(handler);
 
+            // base64(urlencode(username):urlencode(password))
             string encodedUsername = HttpUtility.UrlEncode(username);
             string encodedPassword = HttpUtility.UrlEncode(password);
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(String.Format("{0}:{1}", encodedUsername, encodedPassword));
-            string base64Encoded = System.Convert.ToBase64String(bytes);
+            string base64Encoded = Base64Encode(String.Format("{0}:{1}", encodedUsername, encodedPassword));
 
-            http.DefaultRequestHeaders.Add("Authorization", base64Encoded); // Format of value is invalid? 
+            http.DefaultRequestHeaders.Add("Authorization", "Basic " + base64Encoded);  
+            http.DefaultRequestHeaders.Add("User-Agent", "Cerberus / v0.1");
 
-            HttpResponseMessage res;
-
-            try {
-                res = await http.GetAsync("https://vrchat.com/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26");
-            }
-            catch (Exception e) {
-                throw new Exception(e.Message);
-            }
-
-            if (res.StatusCode == HttpStatusCode.OK)
-            {
-                var json = JsonConvert.DeserializeObject<LoginResponse>(res.Content.ReadAsStringAsync().Result);
-                return json.id;
-            } else {
+            HttpResponseMessage res = http.GetAsync("https://vrchat.com/api/1/auth/user?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26").Result;
+            if (res.StatusCode != HttpStatusCode.OK) {
                 throw new Exception("Auth request failed; code: " + res.StatusCode);
             }
+
+            LoginResponse json = JsonConvert.DeserializeObject<LoginResponse>(res.Content.ReadAsStringAsync().Result);
+            if (json.id is not null) {
+
+                string authCookie = handler.CookieContainer.GetCookies(new Uri("https://vrchat.com")).First().Value;
+                return new AuthTokens { token = authCookie, using2FA = false };
+            }
+
+            string otp = RequestOtpLogin();
+
+            http.DefaultRequestHeaders.Remove("Authorization");
+            IDictionary<string, string> body = new Dictionary<string, string>();
+            body.Add("code", otp);
+            FormUrlEncodedContent content = new FormUrlEncodedContent(body);
+
+            HttpResponseMessage postRes = http.PostAsync("https://vrchat.com/api/1/auth/twofactorauth/totp/verify?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26", content).Result;
+            
+            CookieCollection cookies = handler.CookieContainer.GetCookies(new Uri("https://vrchat.com"));
+            string authToken = cookies.Where<Cookie>(cookie => cookie.Name.Equals("auth")).First().Value;
+            string twoFactorToken = cookies.Where<Cookie>(cookie => cookie.Name.Equals("twoFactorAuth")).First().Value;
+
+            return new AuthTokens { token = authToken, twoFactorToken = twoFactorToken, using2FA = true };
         }
+        public static string RequestOtpLogin() {
+            Console.Write("Your account has 2FA enabled (Good job <3), enter you OTP here > ");
+            return Console.ReadLine();
+        } 
         public static int GetCapacityOfWorld(string roomID)
         {
             string worldID = roomID.Split(':')[0];

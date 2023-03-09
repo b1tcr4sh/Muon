@@ -20,15 +20,19 @@ namespace APITests
             string password = dotEnv.Get("VRCHAT_PASSWORD");
 
             Console.Title = "Photon API Test = VRChat";
+            AuthTokens tokens = ClientExtensions.LoginUser(username, password);
+            string uid = await ClientExtensions.GetUserIDAsync(tokens);
+
             Authorization VRChatAuthorization = new Authorization();
-            var AuthCookie = "authcookie_01d6b4bd-13b2-439c-b48f-4a90f7ce324f";
-            VRChatAuthorization.AddAuthParameter("token", AuthCookie);
-            // VRChatAuthorization.AddAuthParameter("user", ClientExtensions.GetUserID(AuthCookie));
-            VRChatAuthorization.AddAuthParameter("user", await ClientExtensions.GetUserIDWithUsernamePasswordAsync(username, password));
-            ConnectionDetails VRChatConfiguration = new ConnectionDetails("bd6fb72d-9fb2-47fe-95a5-083e352c85a4", "2022-12-02t19-00-44-the-roll-of-tim", PhotonRegion.USW, "ns.exitgames.com", VRChatAuthorization);
-            VRChatClient client = new VRChatClient(VRChatConfiguration); 
-            client.ConnectToRegionMaster("USW");
-            Console.ReadLine();
+            VRChatAuthorization.AddAuthParameter("token", tokens.token);
+            VRChatAuthorization.AddAuthParameter("user", uid);
+
+            Console.WriteLine("Logged in as " + uid);
+
+            // ConnectionDetails VRChatConfiguration = new ConnectionDetails("bd6fb72d-9fb2-47fe-95a5-083e352c85a4", "master-build-2023-03-08-kromer-k-spherechili", PhotonRegion.USW, "ns.exitgames.com", VRChatAuthorization);
+            // VRChatClient client = new VRChatClient(VRChatConfiguration); 
+            // client.ConnectToRegionMaster("USW");
+            // Console.ReadLine();
         }
     }
 }

@@ -29,10 +29,10 @@ namespace APITests
 
             Console.WriteLine("Logged in as " + uid);
 
-            // ConnectionDetails VRChatConfiguration = new ConnectionDetails("bd6fb72d-9fb2-47fe-95a5-083e352c85a4", "master-build-2023-03-08-kromer-k-spherechili", PhotonRegion.USW, "ns.exitgames.com", VRChatAuthorization);
-            // VRChatClient client = new VRChatClient(VRChatConfiguration); 
-            // client.ConnectToRegionMaster("USW");
-            // Console.ReadLine();
+            ConnectionDetails VRChatConfiguration = new ConnectionDetails("bf0942f7-9935-4192-b359-f092fa85bef1", "master-build-2023-03-08-kromer-k-spherechili", PhotonRegion.USW, "ns.exitgames.com", VRChatAuthorization);
+            VRChatClient client = new VRChatClient(VRChatConfiguration); 
+            client.ConnectToRegionMaster("USW");
+            Console.ReadLine();
         }
     }
 }
